@@ -23,7 +23,7 @@ public class Process extends AbstractProcess {
     
     public Process(int id, String host, int port, HashMap<Integer, ProcessAddress> addresses) throws RemoteException, AlreadyBoundException {
         super(id, host, port, addresses);
-        n = 2;
+        n = 1 + connections.size();
         vectorClock = new int[n];
         pendingMessages = new LinkedList<>();
     }
@@ -100,8 +100,6 @@ public class Process extends AbstractProcess {
     }
     
     private boolean canDeliver(Message m) {
-    	System.out.println("MAX: n: " + n);
-    	System.out.println("MAX: Message received: " + m.message);
     	int j = m.from;
 		//We need to get the vector clock from m
 		String[] lines = m.message.split("\n");
@@ -126,13 +124,15 @@ public class Process extends AbstractProcess {
     	vectorClock[getProcessId()]++;
     	String V = Arrays.toString(vectorClock);
     	Set<Integer> processes = connections.keySet();
+		StringBuilder sb = new StringBuilder();
+		sb.append(V);
+		sb.append("\n").append(m);
     	for (Integer j : processes) {
     		//Send to all others
-    		StringBuilder sb = new StringBuilder();
-    		sb.append(V);
-    		sb.append("\n").append(m);
     		sendMessage(sb.toString(), j);
     	}
+    	Message msg = new Message(getProcessId(), sb.toString());
+    	deliver(msg);
     }
     
     private void deliver(Message m) {

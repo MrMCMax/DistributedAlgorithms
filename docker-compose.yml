@@ -16,3 +16,9 @@ services:
       - '9091:8888'
     environment:
       RMI_PID: 1
+  node2:
+    build: .
+    ports:
+      - '9092:8888'
+    environment:
+      RMI_PID: 2
