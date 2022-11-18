@@ -38,7 +38,10 @@ public class Process extends AbstractProcess {
 
     	String message = "Hello world!";
     	
-    	if (firstCycle) {
+    	/**
+    	 * Scenario of 3 nodes: Node 0 broadcasts
+    	 */
+    	if (firstCycle && getProcessId() == 0) {
     		broadcast(message);
     		firstCycle = false;
     	}
@@ -67,10 +70,14 @@ public class Process extends AbstractProcess {
     		}
     	}
     	
-    	//Stopping if we have an all ones vector or bigger
+    	//Stopping condition
     	boolean finished = true;
-    	for (int i = 0; i < n && finished; i++) {
-    		finished = vectorClock[i] >= 1;
+    	if (getProcessId() == 0) {
+    		finished = vectorClock[1] >= 1; //Have I received a message from process 1?
+    	} else if (getProcessId() == 1) {
+    		finished = vectorClock[0] >= 1 && vectorClock[1] >= 1; //Have I received a message from process 0 (and replied)?
+    	} else {
+    		finished = vectorClock[0] >= 1 && vectorClock[1] >= 1;
     	}
     	if (finished) this.finished = true;
     }
@@ -119,8 +126,6 @@ public class Process extends AbstractProcess {
     
     private void broadcast(String m) {
     	//First, increment vector clock
-    	System.out.println("MAX: n = " + n);
-    	System.out.println("MAX: vector length " + vectorClock.length);
     	vectorClock[getProcessId()]++;
     	String V = Arrays.toString(vectorClock);
     	Set<Integer> processes = connections.keySet();
@@ -139,5 +144,12 @@ public class Process extends AbstractProcess {
     	System.out.printf("Process %d got message\"%s\" from process %d%n%n", getProcessId(), m.message, m.from);
     	//Now we increment the clock
     	vectorClock[m.from]++;
+    	if (getProcessId() == 1) {
+    		//We check if we got a message from P1
+    		if (m.from == 0) {
+    			//We broadcast a reply
+    			broadcast("Hello, process 0! - Process 1");
+    		}
+    	}
     }
 }

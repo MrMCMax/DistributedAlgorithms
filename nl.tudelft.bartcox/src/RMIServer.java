@@ -73,8 +73,8 @@ public class RMIServer {
 
         int port = addresses.get(processId).port;
         String host = addresses.get(processId).host;
-//        Process p = new Process(processId, host, port, addresses);
-        Process2 p = new Process2(processId, host, port, addresses);
+        Process p = new Process(processId, host, port, addresses);
+//        Process2 p = new Process2(processId, host, port, addresses);
 
         // Run algorithm until it is finished
         while (!p.isFinished()) {
