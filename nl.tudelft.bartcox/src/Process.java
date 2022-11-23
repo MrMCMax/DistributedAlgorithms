@@ -25,7 +25,7 @@ public class Process extends AbstractProcess {
 	// Enable to execute different code in the first cycle.
 	private boolean firstCycle = true;
 	// Defines the scenario and code behaviour.
-	private final Scenario scenario = Scenario.SECOND_MESSAGE_RECEIVED_FIRST;
+	private final Scenario scenario = Scenario.SLIDES;
 
 
 	public Process(int id, String host, int port, HashMap<Integer, ProcessAddress> addresses) throws RemoteException, AlreadyBoundException {
@@ -119,6 +119,7 @@ public class Process extends AbstractProcess {
 				}
 			} while (deliveredSomething);
 		} else {
+			System.out.println("\t...message is postponed.");
 			pendingMessages.push(m);
 		}
 	}
