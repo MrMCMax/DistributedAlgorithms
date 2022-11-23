@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -21,11 +20,16 @@ public class Process extends AbstractProcess {
     private int n;
     private int[] vectorClock;
     
+    private int scenario = 1;
+    
+    private LinkedList<Thread> childThreads;
+    
     public Process(int id, String host, int port, HashMap<Integer, ProcessAddress> addresses) throws RemoteException, AlreadyBoundException {
         super(id, host, port, addresses);
         n = 1 + connections.size();
         vectorClock = new int[n];
         pendingMessages = new LinkedList<>();
+        childThreads = new LinkedList<>();
     }
 
     /**
@@ -79,7 +83,16 @@ public class Process extends AbstractProcess {
     	} else {
     		finished = vectorClock[0] >= 1 && vectorClock[1] >= 1;
     	}
-    	if (finished) this.finished = true;
+    	if (finished) {
+    		for (Thread thread : childThreads) {
+    			try {
+    				thread.join();
+    			} catch (InterruptedException e) {
+    				System.err.println("A thread was interrupted: " + e + ", continuing");
+    			}
+    		}
+    		this.finished = true;
+    	}
     }
     
     /**
@@ -134,7 +147,25 @@ public class Process extends AbstractProcess {
 		sb.append("\n").append(m);
     	for (Integer j : processes) {
     		//Send to all others
-    		sendMessage(sb.toString(), j);
+    		if (scenario == 1) {
+    			//Network of process 0 and j >= 2 is slow
+    			if (getProcessId() == 0 && j >= 2) {
+    				Thread t = new Thread(() -> {
+    					try {
+    						Thread.sleep(3000);
+    					} catch (InterruptedException e) {
+    						System.err.println("Process interrupted while sleeping, continuing");
+    					}
+    					System.out.println("Sending message from " + getProcessId() + " to " + j);
+    					sendMessage(sb.toString(), j);
+    				});
+    				childThreads.add(t);
+    				t.start();
+    			} else {
+					System.out.println("Sending message from " + getProcessId() + " to " + j);
+            		sendMessage(sb.toString(), j);
+    			}
+    		}
     	}
     	Message msg = new Message(getProcessId(), sb.toString());
     	deliver(msg);
