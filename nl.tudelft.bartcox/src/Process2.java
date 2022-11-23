@@ -1,3 +1,4 @@
+import javax.sound.midi.SysexMessage;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.util.Arrays;
@@ -11,12 +12,13 @@ import java.util.OptionalInt;
 public class Process2 extends AbstractProcess {
 	// Enable to execute different code in the first cycle.
 	private boolean firstCycle = true;
+	private int counter = 0;
 	private int[] V;
-	private MessageBuffer pending;
+	private MessageBuffer pending = new MessageBuffer();
 
 	public Process2(int id, String host, int port, HashMap<Integer, ProcessAddress> addresses) throws RemoteException, AlreadyBoundException {
 		super(id, host, port, addresses);
-		V = new int[addresses.size()];
+		V = new int[connections.size() + 1];
 		Arrays.fill(V, 0);
 	}
 
@@ -27,11 +29,11 @@ public class Process2 extends AbstractProcess {
 	 */
 	@Override
 	public void run() {
-
 		if (firstCycle) {
 			// Send the first message.
-			// This can also be done based on (random) elapsed time.
-			broadcast("Hello world.");
+			if (this.getProcessId() == 0) {
+				broadcast();
+			}
 			firstCycle = false;
 		}
 		// Process messages incoming messages if there are any
@@ -42,16 +44,15 @@ public class Process2 extends AbstractProcess {
 			receive(m);
 		}
 
-		OptionalInt min = Arrays.stream(V).min();
-		if (min.isPresent() && min.getAsInt() == 1) {
+		if (counter++ == 10) {
 			this.finished = true;
 		}
 	}
 
-	public void broadcast(String s) {
+	public void broadcast() {
 		V[this.getProcessId()] += 1;
 		for (int p : this.connections.keySet()) {
-			sendMessage(String.format("(%s, %s)", s, Arrays.toString(V)), p);
+			sendMessage(Arrays.toString(V), p);
 		}
 	}
 
@@ -86,8 +87,8 @@ public class Process2 extends AbstractProcess {
 	 * @return
 	 */
 	private boolean canDeliver(Message m) {
-		int[] V_cmp = V;
-		V_cmp[this.getProcessId()] += 1;
+		int[] V_cmp = Arrays.copyOf(V, V.length);
+		V_cmp[m.from] += 1;
 		int[] V_m = messageToIntArray(m);
 
 		for (int i = 0; i < V_cmp.length; i++) {
@@ -99,11 +100,11 @@ public class Process2 extends AbstractProcess {
 	}
 
 	private int[] messageToIntArray(Message m) {
-		String s = m.message.substring(m.message.indexOf(","), m.message.length() - 1).strip();
+		String s = m.message.substring(1, m.message.length() - 1);
 		String[] elements = s.split(",");
 		int[] V = new int[elements.length];
 		for (int i = 0; i < elements.length; i++) {
-			V[i] = Integer.parseInt(elements[i]);
+			V[i] = Integer.parseInt(elements[i].strip());
 		}
 		return V;
 	}
@@ -114,5 +115,8 @@ public class Process2 extends AbstractProcess {
 	 */
 	public void deliver(Message m) {
 		V[this.getProcessId()] += 1;
+		if (this.getProcessId() == 1 && m.from == 0) {
+			broadcast();
+		}
 	}
 }
