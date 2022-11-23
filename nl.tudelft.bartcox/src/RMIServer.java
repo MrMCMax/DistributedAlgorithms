@@ -74,7 +74,6 @@ public class RMIServer {
         int port = addresses.get(processId).port;
         String host = addresses.get(processId).host;
         Process p = new Process(processId, host, port, addresses);
-//        Process2 p = new Process2(processId, host, port, addresses);
 
         // Run algorithm until it is finished
         while (!p.isFinished()) {
@@ -83,7 +82,6 @@ public class RMIServer {
             // Wait for a random time
             waitRandom();
         }
-        System.out.printf("Process %d is finished%n", p.getProcessId());
         // Wait for some time to allow for a more graceful exit of remote calls
         sleep(2000);
         System.exit(0);

@@ -42,10 +42,10 @@ abstract class AbstractProcess extends UnicastRemoteObject implements ServerInte
                 HashMap.Entry<Integer, ProcessAddress> pair = it.next();
                 ProcessAddress a = pair.getValue();
                 Integer pId = pair.getKey();
-                if (pId == processId) {
-                    it.remove();
-                    continue;
-                }
+//                if (pId == processId) {
+//                    it.remove();
+//                    continue;
+//                }
                 Registry reg = LocateRegistry.getRegistry(a.host, a.port);
                 try {
                     //Create link
