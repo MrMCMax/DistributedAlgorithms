@@ -9,7 +9,8 @@ import java.util.Set;
 
 enum Scenario {
 	SLIDES,
-	SECOND_MESSAGE_RECEIVED_FIRST
+	SECOND_MESSAGE_RECEIVED_FIRST,
+	SPAMMING
 }
 
 /**
@@ -23,9 +24,9 @@ public class Process extends AbstractProcess {
 	private final int[] vectorClock;
 	private final LinkedList<Thread> childThreads;
 	// Enable to execute different code in the first cycle.
-	private boolean firstCycle = true;
+	private int counter = 0;
 	// Defines the scenario and code behaviour.
-	private final Scenario scenario = Scenario.SLIDES;
+	private final Scenario scenario = Scenario.SPAMMING;
 
 
 	public Process(int id, String host, int port, HashMap<Integer, ProcessAddress> addresses) throws RemoteException, AlreadyBoundException {
@@ -49,7 +50,7 @@ public class Process extends AbstractProcess {
 		}
 
 		if (scenario == Scenario.SLIDES) {
-			if (firstCycle && getProcessId() == 0) {
+			if (counter == 0 && getProcessId() == 0) {
 				HashSet<Integer> delayed = new HashSet<>();
 				for (int i = 2; i < n; i++) {
 					delayed.add(i);
@@ -68,7 +69,7 @@ public class Process extends AbstractProcess {
 		}
 
 		if (scenario == Scenario.SECOND_MESSAGE_RECEIVED_FIRST) {
-			if (firstCycle && getProcessId() == 0) {
+			if (counter == 0 && getProcessId() == 0) {
 				HashSet<Integer> delayed = new HashSet<>();
 				for (int i = 0; i < n; i++) {
 					delayed.add(i);
@@ -85,6 +86,21 @@ public class Process extends AbstractProcess {
 			}
 		}
 
+		if (scenario == Scenario.SPAMMING) {
+			if (counter == 0 && getProcessId() == 0) {
+				HashSet<Integer> delayed = new HashSet<>();
+				for (int i = 0; i < n; i++) {
+					delayed.add(i);
+				}
+				broadcast(delayed);
+			} else if (counter < 5) {
+				broadcast(new HashSet<>());
+			}
+
+			// Stopping condition
+			finished = vectorClock[0] >= 3;
+		}
+
 		// Conclusion and wrap-up
 		if (finished) {
 			System.out.printf("Process %d FINISHED with vector clock %s%n", getProcessId(), Arrays.toString(vectorClock));
@@ -97,7 +113,7 @@ public class Process extends AbstractProcess {
 			}
 		}
 
-		firstCycle = false;
+		counter++;
 	}
 
 	private void receive(Message m) {
@@ -196,12 +212,11 @@ public class Process extends AbstractProcess {
 	    System.out.printf("Process %d DELIVERED message\"%s\" from process %s%n", getProcessId(), m.message, m.from);
     	vectorClock[m.from]++;
 
-		// Scenario SLIDES
     	if (scenario == Scenario.SLIDES && getProcessId() == 1) {
     		// Broadcast after receiving a message from process 0
     		if (m.from == 0) {
 			    broadcast(new HashSet<>());
     		}
     	}
-    }
+	}
 }
