@@ -1,3 +1,35 @@
+# Submission
+### Scenarios
+To run a different scenario, edit the scenario field in Process.java. The possible scenarios are:
+- SLIDES (default). Process p0 broadcasts a message m1 in the first cycle. m1 is delayed for all processes other than p1. When p1 receives the message from p0, it broadcasts its own message m2. m2 arrives before m1 and the delivery is therefore postponed until after delivering m1. 
+![](nl.tudelft.bartcox/images/Scenario_slides.jpg)
+- SPAMMING. Each process broadcasts messages in the first 2 rounds (defined by a local variable rounds). However, the first message m1 from process 0 is delayed. Therefore, further messages from p0 are postponed until delivering m1.
+- SECOND_MESSAGE_RECEIVED_FIRST. Equivalent to the first scenario, except both messages are sent by process 0. This scenario is meant to test self-delivery of messages coming from its own process. We found out that the vector clock should not be incremented (again) when delivering a message from itself.
+![](nl.tudelft.bartcox/images/Scenario_second_message_received_first.jpg)
+
+### Adding a new process
+1. Add a new line with <id name port> (e.g. "3 node3 9093") to addresses_docker.txt.
+2. Add a new line with <id localhost port> (e.g. "3 localhost 9093") to addresses.txt.
+3. Add new lines to docker-compose.yml with the following information:
+    ```
+    <name>: 
+    build:
+    ports: 
+     - '<port>:8888'
+       environment:
+       RMI_PID: <id>
+    ```
+    e.g.
+    ```
+       node2:
+       build: .
+       ports:
+        - '9092:8888'
+          environment:
+          RMI_PID: 2
+    ```
+
+
 # Java Template
 This code is offered as a template for the course IN4150.
 This template is tested on Ubuntu 20.04 (should also work on Windows and Mac OSX).
