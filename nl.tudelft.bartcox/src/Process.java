@@ -59,13 +59,7 @@ public class Process extends AbstractProcess {
 			}
 
 			// Stopping conditions
-			if (getProcessId() == 0) {
-				finished = vectorClock[0] >= 2 && vectorClock[1] >= 1;
-			} else if (getProcessId() == 1) {
-				finished = vectorClock[0] >= 1 && vectorClock[1] >= 2;
-			} else {
-				finished = vectorClock[0] >= 1 && vectorClock[1] >= 1;
-			}
+			finished = vectorClock[0] >= 1 && vectorClock[1] >= 1;
 		}
 
 		if (scenario == Scenario.SECOND_MESSAGE_RECEIVED_FIRST) {
@@ -79,11 +73,7 @@ public class Process extends AbstractProcess {
 			}
 
 			// Stopping condition
-			if (getProcessId() == 0) {
-				finished = vectorClock[0] >= 4;
-			} else {
-				finished = vectorClock[0] >= 2;
-			}
+			finished = vectorClock[0] >= 2;
 		}
 
 		if (scenario == Scenario.SPAMMING) {
@@ -100,9 +90,8 @@ public class Process extends AbstractProcess {
 
 			// Stopping condition
 			finished = true;
-			for (int i = 0; i < vectorClock.length; i++) {
-				if ((i == getProcessId() && vectorClock[i] < 2*rounds)
-						|| vectorClock[i] < rounds) {
+			for (int j : vectorClock) {
+				if (j < rounds) {
 					finished = false;
 					break;
 				}
@@ -111,7 +100,7 @@ public class Process extends AbstractProcess {
 
 		// Conclusion and wrap-up
 		if (finished) {
-			System.out.printf("Process %d FINISHED with vector clock %s%n", getProcessId(), Arrays.toString(vectorClock));
+			System.out.printf(Arrays.toString(vectorClock) + "Process %d FINISHED with vector clock %s%n", getProcessId(), Arrays.toString(vectorClock));
 			for (Thread thread : childThreads) {
 				try {
 					thread.join();
@@ -125,7 +114,7 @@ public class Process extends AbstractProcess {
 	}
 
 	private void receive(Message m) {
-		System.out.printf("Process %d RECEIVED message\"%s\" from process %s%n", getProcessId(), m.message, m.from);
+		System.out.printf(Arrays.toString(vectorClock) + "Process %d RECEIVED message\"%s\" from process %s%n", getProcessId(), m.message, m.from);
 		if (canDeliver(m)) {
 			deliver(m);
 			//Now we check which pending messages we can add
@@ -217,8 +206,10 @@ public class Process extends AbstractProcess {
     }
     
     private void deliver(Message m) {
-	    System.out.printf("Process %d DELIVERED message\"%s\" from process %s%n", getProcessId(), m.message, m.from);
-    	vectorClock[m.from]++;
+	    System.out.printf(Arrays.toString(vectorClock) + "Process %d DELIVERED message\"%s\" from process %s%n", getProcessId(), m.message, m.from);
+    	if (m.from != getProcessId()) {
+		    vectorClock[m.from]++;
+	    }
 
     	if (scenario == Scenario.SLIDES && getProcessId() == 1) {
     		// Broadcast after receiving a message from process 0
