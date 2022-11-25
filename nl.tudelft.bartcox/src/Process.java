@@ -87,18 +87,26 @@ public class Process extends AbstractProcess {
 		}
 
 		if (scenario == Scenario.SPAMMING) {
+			int rounds = 2;
 			if (counter == 0 && getProcessId() == 0) {
 				HashSet<Integer> delayed = new HashSet<>();
 				for (int i = 0; i < n; i++) {
 					delayed.add(i);
 				}
 				broadcast(delayed);
-			} else if (counter < 5) {
+			} else if (counter < rounds) {
 				broadcast(new HashSet<>());
 			}
 
 			// Stopping condition
-			finished = vectorClock[0] >= 3;
+			finished = true;
+			for (int i = 0; i < vectorClock.length; i++) {
+				if ((i == getProcessId() && vectorClock[i] < 2*rounds)
+						|| vectorClock[i] < rounds) {
+					finished = false;
+					break;
+				}
+			}
 		}
 
 		// Conclusion and wrap-up
